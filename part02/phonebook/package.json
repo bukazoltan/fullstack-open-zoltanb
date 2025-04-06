@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "npm i && vite build",
+    "build": "npm i && git config --global user.email 'deploy@render.com' && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
     "server": "json-server -p 3001 db.json"
