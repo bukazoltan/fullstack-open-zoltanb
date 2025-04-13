@@ -1,8 +1,9 @@
+require('dotenv').config()
 const express = require("express");
 const morgan = require("morgan");
 const cors = require("cors");
+const PhonebookEntry = require('./models/phonebookEntry')
 
-const PORT = process.env.PORT || 3001
 app = express()
 
 morgan.token('body', function (req, res) { return JSON.stringify(req.body) })
@@ -35,35 +36,39 @@ let data = [
     }
 ]
 
-app.get("/api/persons", (req,res) => res.send(data).status(200).end())
+app.get("/api/persons", (req,res) => {
+  PhonebookEntry.find({})
+                .then(entries => res.json(entries))
+                .then(res => res.status(200).end())
+})
 
 app.get("/api/persons/:id", (req, res) => {
-    const correctEntry = data.find((item) => item.id == req.params.id)
-    if (correctEntry) {
+    PhonebookEntry.findOne({_id: req.params.id}).then(correctEntry => {
+      if (correctEntry) {
         return res.send(correctEntry).status(200).end()
-    }
-    return res.status(404).end()
+      }
+      return res.status(404).end()
+    })
 })
 
 app.delete("/api/persons/:id", (req, res) => {
-    data = data.filter(item => item.id != req.params.id)
-    return res.status(202).end()
+    PhonebookEntry.deleteOne({_id: req.params.id}).then(
+      () => res.status(202).end()
+    )
+    
 })
 
 app.post("/api/persons", (req, res) => {
     const newPerson = req.body;
-    const newId = Math.floor(Math.random() * 99999999)
-    const newObject = {id: newId, ...newPerson}
-    if (!Object.keys(newPerson).includes("name") || !Object.keys(newPerson).includes("number")){
-        return res.status(400).send({"error": "name or number is not included"})
-    }
-    if (data.find(person => person.name == newPerson.name)) {
-        return res.status(400).send({"error": "name must be unique"})
-    }
-    data.push(newObject)
-    return res.send(newObject).status(200).end()
+    const newEntry = new PhonebookEntry({
+      name: newPerson.name,
+      number: newPerson.number
+    })
+    newEntry.save().then(savedNewEntry => {
+      return res.send(savedNewEntry).status(200).end()
+    })
 })
 
 app.get("/info", (req, res) => res.send(`<p>Phonebook has info for ${data.length} people</p><p>${Date(Date.now()).toString()}</p>`))
 
-app.listen(PORT, () => console.log(`Server is running on http://localhost:${PORT}`))
+app.listen(process.env.PORT, () => console.log(`Server is running on http://localhost:${process.env.PORT}`))

@@ -26,7 +26,7 @@ const App = () => {
 
   const personsToShow = persons.filter((person) =>
     person.name.toLowerCase().includes(filter.toLowerCase())
-  )
+  );
 
   const addContact = (e) => {
     e.preventDefault()
