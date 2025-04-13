@@ -4,7 +4,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "dev": "node --watch index.js",
+    "dev": "npm run build:ui && node --watch index.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "build:ui": "rm -rf dist && cd ../../part02/phonebook && npm run build && cp -r dist ../../part03/phonebook-backend",
     "build": "npm run build:ui && npm install",

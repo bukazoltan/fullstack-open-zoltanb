@@ -13,62 +13,75 @@ app.use(express.json())
 app.use(morgan(':method :url :status :res[content-length] - :response-time ms :body'))
 app.use(cors())
 
-let data = [
-    { 
-      "id": "1",
-      "name": "Arto Hellas", 
-      "number": "040-123456"
-    },
-    { 
-      "id": "2",
-      "name": "Ada Lovelace", 
-      "number": "39-44-5323523"
-    },
-    { 
-      "id": "3",
-      "name": "Dan Abramov", 
-      "number": "12-43-234345"
-    },
-    { 
-      "id": "4",
-      "name": "Mary Poppendieck", 
-      "number": "39-23-6423122"
-    }
-]
-
 app.get("/api/persons", (req,res) => {
   PhonebookEntry.find({})
                 .then(entries => res.json(entries))
                 .then(res => res.status(200).end())
 })
 
-app.get("/api/persons/:id", (req, res) => {
-    PhonebookEntry.findOne({_id: req.params.id}).then(correctEntry => {
+app.get("/api/persons/:id", (req, res, next) => {
+    PhonebookEntry.findById({_id: req.params.id}).then(correctEntry => {
       if (correctEntry) {
         return res.send(correctEntry).status(200).end()
       }
       return res.status(404).end()
     })
+    .catch(error => next(error))
 })
 
 app.delete("/api/persons/:id", (req, res) => {
-    PhonebookEntry.deleteOne({_id: req.params.id}).then(
+    PhonebookEntry.findByIdAndDelete({_id: req.params.id}).then(
       () => res.status(202).end()
     )
-    
+    .catch(error => next(error))
 })
 
-app.post("/api/persons", (req, res) => {
+app.post("/api/persons", (req, res, next) => {
     const newPerson = req.body;
     const newEntry = new PhonebookEntry({
       name: newPerson.name,
       number: newPerson.number
     })
-    newEntry.save().then(savedNewEntry => {
-      return res.send(savedNewEntry).status(200).end()
-    })
+    newEntry.save()
+            .then(savedNewEntry => {
+              return res.send(savedNewEntry).status(200).end()}
+            ).catch(error => next(error))
 })
 
-app.get("/info", (req, res) => res.send(`<p>Phonebook has info for ${data.length} people</p><p>${Date(Date.now()).toString()}</p>`))
+app.put("/api/persons/:id", (req, res, next) => {
+  const updatedPerson = req.body;
+  PhonebookEntry.findByIdAndUpdate(req.params.id, updatedPerson)
+                .then( () => {
+                  return res.send(updatedPerson).status(200).end()
+                })
+                .catch(error => next(error))
+})
+
+app.get("/info", (req, res) => {
+  PhonebookEntry.countDocuments()
+                .then(count => {
+                  res.send(`<p>Phonebook has info for ${count} people</p><p>${Date(Date.now()).toString()}</p>`)
+                })
+})
+
+const unknownEndpoint = (request, response) => {
+  response.status(404).send({error: 'unknown endpoint'})
+}
+
+app.use(unknownEndpoint);
+
+const errorHandler = (error, request, response, next) => {
+  console.log(error);
+
+  if (error.name === 'CastError') {
+    return response.status(400).send({error: 'malformatted id'})
+  } else if (error.name === 'ValidationError') {
+    return response.status(400).json({error: error.message})
+  }
+
+  next(error)
+}
+
+app.use(errorHandler);
 
 app.listen(process.env.PORT, () => console.log(`Server is running on http://localhost:${process.env.PORT}`))
