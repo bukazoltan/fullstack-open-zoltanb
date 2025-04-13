@@ -28,6 +28,11 @@ const App = () => {
     person.name.toLowerCase().includes(filter.toLowerCase())
   );
 
+  const createStatusMessage = (text, type) => {
+    setStatusMessage({text, type})
+    setTimeout(() => setStatusMessage(null), 3000)
+  }
+
   const addContact = (e) => {
     e.preventDefault()
     let personsCopy = [...persons]
@@ -44,15 +49,15 @@ const App = () => {
           setPersons(personsCopy)
         })
       }
-      return
-    }
-    personService.create({"name": newName, "number": newNumber}).then(newPerson => {
-      personsCopy.push(newPerson)
-      setPersons(personsCopy)
-      setStatusMessage({text: `Added ${newPerson.name}`, type: 'status'})
-      setTimeout(() => setStatusMessage(null), 3000)
-    })
-    
+    } else {
+      personService.create({"name": newName, "number": newNumber}).then(newPerson => {
+        personsCopy.push(newPerson)
+        setPersons(personsCopy)
+        createStatusMessage( `Added ${newPerson.name}`, 'status')
+      }).catch(error => {
+        createStatusMessage(error.response.data.error, 'error')
+      })
+    } 
   }
 
   const deleteContact = (person) => {
@@ -62,8 +67,7 @@ const App = () => {
         let personsWithoutRemoved = persons.filter(p => p.id != person.id)
         setPersons(personsWithoutRemoved)
       }).catch(error => {
-        setStatusMessage({text: `Information of ${person.name} has already been removed from server`, type: 'error'})
-        setTimeout(() => setStatusMessage(null), 3000)
+        createStatusMessage(`Information of ${person.name} has already been removed from server`, 'error')
       })
     }
   }
