@@ -1,0 +1,9 @@
+POST http://localhost:3003/api/blogs
+content-type: application/json
+
+{
+  "title": "How to write a blog post: a step-by-step guide",
+  "author": "Cecilia Lazzaro Blasbalg",
+  "url": "https://www.wix.com/blog/how-to-write-a-blog-post-with-examples",
+  "likes": 0
+}
